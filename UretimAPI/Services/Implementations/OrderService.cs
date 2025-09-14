@@ -48,6 +48,11 @@ namespace UretimAPI.Services.Implementations
             if (!isUnique)
                 throw new DuplicateException("Order", "DocumentNo", createDto.DocumentNo);
 
+            // Validate that completed quantity doesn't exceed order count
+            if (createDto.CompletedQuantity > createDto.OrderCount)
+                throw new ValidationException("Completed quantity cannot exceed order count", 
+                    new List<string> { $"Completed quantity ({createDto.CompletedQuantity}) cannot be greater than order count ({createDto.OrderCount})" });
+
             var order = _mapper.Map<Order>(createDto);
             var createdOrder = await _unitOfWork.Orders.AddAsync(order);
             await _unitOfWork.SaveChangesAsync();
@@ -74,6 +79,15 @@ namespace UretimAPI.Services.Implementations
             if (inputDuplicates.Any())
                 throw new ValidationException("Duplicate document numbers in input", 
                     inputDuplicates.Select(dn => $"Document number '{dn}' appears multiple times in the request").ToList());
+
+            // Validate that completed quantity doesn't exceed order count for all orders
+            var invalidCompletedQuantities = createDtosList
+                .Where(dto => dto.CompletedQuantity > dto.OrderCount)
+                .Select(dto => $"Document No '{dto.DocumentNo}': Completed quantity ({dto.CompletedQuantity}) cannot be greater than order count ({dto.OrderCount})")
+                .ToList();
+            
+            if (invalidCompletedQuantities.Any())
+                throw new ValidationException("Invalid completed quantities found", invalidCompletedQuantities);
 
             var orders = _mapper.Map<List<Order>>(createDtosList);
             var createdOrders = await _unitOfWork.Orders.AddRangeAsync(orders);
@@ -204,6 +218,24 @@ namespace UretimAPI.Services.Implementations
 
             var orderDtos = _mapper.Map<IEnumerable<OrderDto>>(orders);
             return (orderDtos, totalCount);
+        }
+
+        public async Task<OrderDto> UpdateCompletedQuantityAsync(int id, int completedQuantity)
+        {
+            var existingOrder = await _unitOfWork.Orders.GetByIdAsync(id);
+            if (existingOrder == null)
+                throw new NotFoundException("Order", id);
+
+            // Validate that completed quantity doesn't exceed order count
+            if (completedQuantity > existingOrder.OrderCount)
+                throw new ValidationException("Completed quantity cannot exceed order count", 
+                    new List<string> { $"Completed quantity ({completedQuantity}) cannot be greater than order count ({existingOrder.OrderCount})" });
+
+            existingOrder.CompletedQuantity = completedQuantity;
+            await _unitOfWork.Orders.UpdateAsync(existingOrder);
+            await _unitOfWork.SaveChangesAsync();
+
+            return _mapper.Map<OrderDto>(existingOrder);
         }
     }
 }

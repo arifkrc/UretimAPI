@@ -9,5 +9,6 @@ namespace UretimAPI.Services.Interfaces
         Task<IEnumerable<OrderDto>> GetByProductCodeAsync(string productCode);
         Task<IEnumerable<OrderDto>> GetByWeekAsync(string orderAddedDateTime);
         Task<bool> IsDocumentNoUniqueAsync(string documentNo, int? excludeId = null);
+        Task<OrderDto> UpdateCompletedQuantityAsync(int id, int completedQuantity);
     }
 }

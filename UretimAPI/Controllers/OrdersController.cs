@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using UretimAPI.DTOs.Common;
 using UretimAPI.DTOs.Order;
 using UretimAPI.Services.Interfaces;
+using UretimAPI.Exceptions;
 
 namespace UretimAPI.Controllers
 {
@@ -149,14 +150,41 @@ namespace UretimAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Creates a new order
+        /// </summary>
+        /// <param name="createDto">Order creation data</param>
+        /// <returns>Created order</returns>
+        /// <remarks>
+        /// CompletedQuantity is optional and defaults to 0. If provided, it cannot exceed OrderCount.
+        /// </remarks>
         [HttpPost]
         public async Task<ActionResult<ApiResponse<OrderDto>>> Create([FromBody] CreateOrderDto createDto)
         {
             try
             {
+                if (createDto == null)
+                {
+                    return BadRequest(ApiResponse<OrderDto>.ErrorResult("Request body cannot be null"));
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.SelectMany(x => x.Value?.Errors?.Select(e => e.ErrorMessage) ?? new List<string>()).ToList();
+                    return BadRequest(ApiResponse<OrderDto>.ErrorResult("Validation failed", errors));
+                }
+
                 var order = await _orderService.CreateAsync(createDto);
                 return CreatedAtAction(nameof(GetById), new { id = order.Id }, 
                     ApiResponse<OrderDto>.SuccessResult(order, "Order created successfully"));
+            }
+            catch (DuplicateException ex)
+            {
+                return Conflict(ApiResponse<OrderDto>.ErrorResult(ex.Message));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<OrderDto>.ErrorResult(ex.Message, ex.Errors));
             }
             catch (InvalidOperationException ex)
             {
@@ -260,6 +288,39 @@ namespace UretimAPI.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponse<OrderDto>.ErrorResult("An error occurred while deactivating the order", new List<string> { ex.Message }));
+            }
+        }
+
+        /// <summary>
+        /// Updates the completed quantity of an order
+        /// </summary>
+        /// <param name="id">Order ID</param>
+        /// <param name="completedQuantity">New completed quantity</param>
+        /// <returns>Updated order</returns>
+        [HttpPatch("{id}/completed-quantity/{completedQuantity}")]
+        public async Task<ActionResult<ApiResponse<OrderDto>>> UpdateCompletedQuantity(int id, int completedQuantity)
+        {
+            try
+            {
+                if (completedQuantity < 0)
+                {
+                    return BadRequest(ApiResponse<OrderDto>.ErrorResult("Completed quantity cannot be negative"));
+                }
+
+                var order = await _orderService.UpdateCompletedQuantityAsync(id, completedQuantity);
+                return Ok(ApiResponse<OrderDto>.SuccessResult(order, "Order completed quantity updated successfully"));
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ApiResponse<OrderDto>.ErrorResult(ex.Message));
+            }
+            catch (ValidationException ex)
+            {
+                return BadRequest(ApiResponse<OrderDto>.ErrorResult(ex.Message, ex.Errors));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<OrderDto>.ErrorResult("An error occurred while updating completed quantity", new List<string> { ex.Message }));
             }
         }
     }

@@ -349,13 +349,31 @@ namespace UretimAPI.Controllers
                 return BadRequest(ApiResponse<ProductDto>.ErrorResult("Validation failed", errors));
             }
 
-            _logger.LogInformation("Updating product {ProductId} with name: {Name}", 
-                id, updateDto.Name);
+            // Get existing product to check if ProductCode is changing
+            var existingProduct = await _productService.GetByIdAsync(id);
+            if (existingProduct == null)
+            {
+                _logger.LogWarning("Product with ID {ProductId} not found for update", id);
+                return NotFound(ApiResponse<ProductDto>.ErrorResult($"Product with ID {id} not found"));
+            }
+
+            var oldProductCode = existingProduct.ProductCode;
+
+            _logger.LogInformation("Updating product {ProductId} with name: {Name}, productCode: {ProductCode}", 
+                id, updateDto.Name, updateDto.ProductCode);
 
             var product = await _productService.UpdateAsync(id, updateDto);
 
+            // Clear cache
             await _cacheService.RemoveByPatternAsync("products:");
             await _cacheService.RemoveAsync(CacheKeys.ProductById(id));
+            
+            // If ProductCode changed, remove old ProductCode cache as well
+            if (!string.IsNullOrEmpty(oldProductCode) && oldProductCode != updateDto.ProductCode)
+            {
+                await _cacheService.RemoveAsync(CacheKeys.ProductByCode(oldProductCode));
+                _logger.LogInformation("Cleared cache for old ProductCode: {OldProductCode}", oldProductCode);
+            }
 
             _logger.LogInformation("Product {ProductId} updated successfully", id);
             
@@ -478,6 +496,32 @@ namespace UretimAPI.Controllers
             _logger.LogInformation("Product {ProductId} deactivated successfully", id);
             
             return Ok(ApiResponse<ProductDto>.SuccessResult(product, "Product deactivated successfully"));
+        }
+
+        /// <summary>
+        /// Gets current server time information for debugging timezone issues
+        /// </summary>
+        [HttpGet("debug/time")]
+        [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+        public ActionResult<ApiResponse<object>> GetServerTime()
+        {
+            var timeInfo = new
+            {
+                UtcNow = DateTime.UtcNow,
+                TurkeyTime = UretimAPI.Helpers.DateTimeHelper.Now,
+                ServerLocalTime = DateTime.Now,
+                TimeZoneInfo = new
+                {
+                    Id = UretimAPI.Helpers.DateTimeHelper.TurkeyTimeZoneInfo.Id,
+                    DisplayName = UretimAPI.Helpers.DateTimeHelper.TurkeyTimeZoneInfo.DisplayName,
+                    StandardName = UretimAPI.Helpers.DateTimeHelper.TurkeyTimeZoneInfo.StandardName,
+                    IsDaylightSavingTime = UretimAPI.Helpers.DateTimeHelper.TurkeyTimeZoneInfo.IsDaylightSavingTime(DateTime.UtcNow)
+                }
+            };
+
+            _logger.LogInformation("Server time debug info requested");
+            
+            return Ok(ApiResponse<object>.SuccessResult(timeInfo, "Server time information retrieved successfully"));
         }
     }
 }

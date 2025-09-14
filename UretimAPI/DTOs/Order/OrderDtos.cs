@@ -13,6 +13,7 @@ namespace UretimAPI.DTOs.Order
         public string Variants { get; set; } = string.Empty;
         public int OrderCount { get; set; }
         public int Carryover { get; set; }
+        public int CompletedQuantity { get; set; }
         public DateTime AddedDateTime { get; set; }
         public bool IsActive { get; set; }
     }
@@ -42,6 +43,9 @@ namespace UretimAPI.DTOs.Order
 
         [Range(0, int.MaxValue, ErrorMessage = "Carryover cannot be negative.")]
         public int Carryover { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Completed quantity cannot be negative.")]
+        public int CompletedQuantity { get; set; } = 0;
     }
 
     public class UpdateOrderDto
@@ -65,6 +69,9 @@ namespace UretimAPI.DTOs.Order
 
         [Range(0, int.MaxValue, ErrorMessage = "Carryover cannot be negative.")]
         public int Carryover { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Completed quantity cannot be negative.")]
+        public int CompletedQuantity { get; set; }
     }
 
     public class BulkCreateOrderDto

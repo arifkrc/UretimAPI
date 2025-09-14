@@ -1,3 +1,5 @@
+using UretimAPI.Helpers;
+
 namespace UretimAPI.Entities
 {
     public class Operation
@@ -7,7 +9,7 @@ namespace UretimAPI.Entities
         public string ShortCode { get; set; } = string.Empty;
         
         // Common fields
-        public DateTime AddedDateTime { get; set; } = DateTime.UtcNow;
+        public DateTime AddedDateTime { get; set; } = DateTimeHelper.Now;
         public bool IsActive { get; set; } = true;
         
         // Navigation properties

@@ -1,3 +1,5 @@
+using UretimAPI.Helpers;
+
 namespace UretimAPI.Entities
 {
     public class Product
@@ -13,7 +15,7 @@ namespace UretimAPI.Entities
         public Operation LastOperation { get; set; } = null!;
         
         // Common fields
-        public DateTime AddedDateTime { get; set; } = DateTime.UtcNow;
+        public DateTime AddedDateTime { get; set; } = DateTimeHelper.Now;
         public bool IsActive { get; set; } = true;
         
         // Navigation properties for relationships

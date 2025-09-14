@@ -39,6 +39,9 @@ namespace UretimAPI.DTOs.Product
 
     public class UpdateProductDto
     {
+        [ProductCode]
+        public string ProductCode { get; set; } = string.Empty;
+
         [RequiredNotEmpty]
         [StringLength(200, MinimumLength = 2, ErrorMessage = "Name must be between 2 and 200 characters.")]
         public string Name { get; set; } = string.Empty;

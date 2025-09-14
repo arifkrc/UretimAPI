@@ -61,6 +61,12 @@ namespace UretimAPI.Data
                       .WithMany(o => o.CycleTimes)
                       .HasForeignKey(c => c.OperationId)
                       .OnDelete(DeleteBehavior.Cascade);
+                
+                // Unique constraint for ProductId-OperationId combination (only for active records)
+                entity.HasIndex(c => new { c.ProductId, c.OperationId })
+                      .IsUnique()
+                      .HasFilter("[IsActive] = 1")
+                      .HasDatabaseName("IX_CycleTime_ProductId_OperationId_Unique");
             });
 
             // ProductionTrackingForm Configuration
@@ -162,11 +168,6 @@ namespace UretimAPI.Data
             modelBuilder.Entity<Packing>()
                 .HasIndex(p => new { p.ProductCode, p.Date, p.IsActive })
                 .HasDatabaseName("IX_Packing_ProductCode_Date_IsActive");
-
-            // CycleTime composite index
-            modelBuilder.Entity<CycleTime>()
-                .HasIndex(c => new { c.ProductId, c.OperationId, c.IsActive })
-                .HasDatabaseName("IX_CycleTime_Product_Operation_IsActive");
         }
     }
 }

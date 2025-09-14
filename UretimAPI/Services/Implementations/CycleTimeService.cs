@@ -68,6 +68,11 @@ namespace UretimAPI.Services.Implementations
             if (operation == null)
                 throw new NotFoundException("Operation", createDto.OperationId);
 
+            // Validate unique product-operation combination
+            var isUnique = await _unitOfWork.CycleTimes.IsProductOperationCombinationUniqueAsync(createDto.ProductId, createDto.OperationId);
+            if (!isUnique)
+                throw new DuplicateException("CycleTime", "ProductId-OperationId", $"{createDto.ProductId}-{createDto.OperationId}");
+
             var cycleTime = _mapper.Map<CycleTime>(createDto);
             var createdCycleTime = await _unitOfWork.CycleTimes.AddAsync(cycleTime);
             await _unitOfWork.SaveChangesAsync();
@@ -99,6 +104,32 @@ namespace UretimAPI.Services.Implementations
                 throw new ValidationException("Operations not found", 
                     missingOperationIds.Select(id => $"Operation with ID {id} not found").ToList());
 
+            // Check for duplicate product-operation combinations in input
+            var productOperationCombinations = createDtosList.Select(x => new { x.ProductId, x.OperationId }).ToList();
+            var inputDuplicates = productOperationCombinations
+                .GroupBy(x => new { x.ProductId, x.OperationId })
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)
+                .ToList();
+            
+            if (inputDuplicates.Any())
+                throw new ValidationException("Duplicate product-operation combinations in input", 
+                    inputDuplicates.Select(d => $"Product {d.ProductId} - Operation {d.OperationId} appears multiple times in the request").ToList());
+
+            // Check for existing product-operation combinations in database
+            var existingCombinations = new List<string>();
+            foreach (var dto in createDtosList)
+            {
+                var isUnique = await _unitOfWork.CycleTimes.IsProductOperationCombinationUniqueAsync(dto.ProductId, dto.OperationId);
+                if (!isUnique)
+                {
+                    existingCombinations.Add($"Product {dto.ProductId} - Operation {dto.OperationId} already has a cycle time");
+                }
+            }
+            
+            if (existingCombinations.Any())
+                throw new ValidationException("Duplicate product-operation combinations found", existingCombinations);
+
             var cycleTimes = _mapper.Map<List<CycleTime>>(createDtosList);
             var createdCycleTimes = await _unitOfWork.CycleTimes.AddRangeAsync(cycleTimes);
             await _unitOfWork.SaveChangesAsync();
@@ -121,6 +152,14 @@ namespace UretimAPI.Services.Implementations
             var operation = await _unitOfWork.Operations.GetByIdAsync(updateDto.OperationId);
             if (operation == null)
                 throw new NotFoundException("Operation", updateDto.OperationId);
+
+            // Validate unique product-operation combination if it's being changed
+            if (existingCycleTime.ProductId != updateDto.ProductId || existingCycleTime.OperationId != updateDto.OperationId)
+            {
+                var isUnique = await _unitOfWork.CycleTimes.IsProductOperationCombinationUniqueAsync(updateDto.ProductId, updateDto.OperationId, id);
+                if (!isUnique)
+                    throw new DuplicateException("CycleTime", "ProductId-OperationId", $"{updateDto.ProductId}-{updateDto.OperationId}");
+            }
 
             _mapper.Map(updateDto, existingCycleTime);
             await _unitOfWork.CycleTimes.UpdateAsync(existingCycleTime);

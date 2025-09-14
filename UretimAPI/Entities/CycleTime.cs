@@ -1,3 +1,5 @@
+using UretimAPI.Helpers;
+
 namespace UretimAPI.Entities
 {
     public class CycleTime
@@ -12,7 +14,7 @@ namespace UretimAPI.Entities
         public Product Product { get; set; } = null!;
         
         // Common fields
-        public DateTime AddedDateTime { get; set; } = DateTime.UtcNow;
+        public DateTime AddedDateTime { get; set; } = DateTimeHelper.Now;
         public bool IsActive { get; set; } = true;
     }
 }

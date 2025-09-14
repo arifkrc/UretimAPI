@@ -46,6 +46,16 @@ namespace UretimAPI.Repositories.Implementations
             return cycleTimes.Any() ? cycleTimes.Average(c => c.Second) : 0;
         }
 
+        public async Task<bool> IsProductOperationCombinationUniqueAsync(int productId, int operationId, int? excludeId = null)
+        {
+            var query = _dbSet.Where(c => c.ProductId == productId && c.OperationId == operationId && c.IsActive);
+            
+            if (excludeId.HasValue)
+                query = query.Where(c => c.Id != excludeId.Value);
+            
+            return !await query.AnyAsync();
+        }
+
         public override async Task<CycleTime?> GetByIdAsync(int id)
         {
             return await _dbSet

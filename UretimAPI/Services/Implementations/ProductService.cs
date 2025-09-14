@@ -118,6 +118,15 @@ namespace UretimAPI.Services.Implementations
             if (existingProduct == null)
                 throw new NotFoundException("Product", id);
 
+            // Validate unique product code if it's being changed
+            if (!string.IsNullOrEmpty(updateDto.ProductCode) && 
+                existingProduct.ProductCode != updateDto.ProductCode)
+            {
+                var isUnique = await _unitOfWork.Products.IsProductCodeUniqueAsync(updateDto.ProductCode, id);
+                if (!isUnique)
+                    throw new DuplicateException("Product", "ProductCode", updateDto.ProductCode);
+            }
+
             // Validate operation exists
             var operation = await _unitOfWork.Operations.GetByIdAsync(updateDto.LastOperationId);
             if (operation == null)

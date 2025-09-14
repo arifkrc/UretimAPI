@@ -8,5 +8,6 @@ namespace UretimAPI.Repositories.Interfaces
         Task<IEnumerable<CycleTime>> GetByOperationIdAsync(int operationId);
         Task<CycleTime?> GetByProductAndOperationAsync(int productId, int operationId);
         Task<double> GetAverageCycleTimeAsync(int productId, int operationId);
+        Task<bool> IsProductOperationCombinationUniqueAsync(int productId, int operationId, int? excludeId = null);
     }
 }

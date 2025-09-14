@@ -1,3 +1,5 @@
+using UretimAPI.Helpers;
+
 namespace UretimAPI.Entities
 {
     public class Order
@@ -14,6 +16,6 @@ namespace UretimAPI.Entities
         public bool IsActive { get; set; } = true;
         
         // Common field (standard AddedDateTime)
-        public DateTime AddedDateTime { get; set; } = DateTime.UtcNow;
+        public DateTime AddedDateTime { get; set; } = DateTimeHelper.Now;
     }
 }

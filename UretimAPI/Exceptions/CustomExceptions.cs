@@ -41,6 +41,7 @@ namespace UretimAPI.Exceptions
                 "product" => "Ürün",
                 "operation" => "Operasyon",
                 "order" => "Sipari?",
+                "cycletime" => "Çevrim Süresi",
                 _ => entityName
             };
         }
@@ -52,6 +53,7 @@ namespace UretimAPI.Exceptions
                 "productcode" => "ürün kodu",
                 "shortcode" => "k?sa kod",
                 "documentno" => "belge numaras?",
+                "productid-operationid" => "ürün-operasyon kombinasyonu",
                 _ => fieldName
             };
         }
