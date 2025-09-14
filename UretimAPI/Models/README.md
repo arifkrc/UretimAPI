@@ -1,0 +1,1 @@
+// This file helps organize the project structure following clean architecture principles

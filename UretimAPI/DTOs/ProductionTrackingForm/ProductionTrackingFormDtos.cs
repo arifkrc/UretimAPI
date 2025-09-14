@@ -1,0 +1,119 @@
+using System.ComponentModel.DataAnnotations;
+using UretimAPI.Validation;
+
+namespace UretimAPI.DTOs.ProductionTrackingForm
+{
+    public class ProductionTrackingFormDto
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public string Shift { get; set; } = string.Empty;
+        public string? Line { get; set; }
+        public string? ShiftSupervisor { get; set; }
+        public string? Machine { get; set; }
+        public string? OperatorName { get; set; }
+        public string? SectionSupervisor { get; set; }
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public string Operation { get; set; } = string.Empty;
+        public int? CastingDefect { get; set; }
+        public int? ProcessingDefect { get; set; }
+        public int? Cleaning { get; set; }
+        public DateTime AddedDateTime { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class CreateProductionTrackingFormDto
+    {
+        [Required(ErrorMessage = "Date is required.")]
+        public DateTime Date { get; set; }
+
+        [RequiredNotEmpty]
+        [StringLength(50, MinimumLength = 1, ErrorMessage = "Shift must be between 1 and 50 characters.")]
+        public string Shift { get; set; } = string.Empty;
+
+        [StringLength(100, ErrorMessage = "Line cannot exceed 100 characters.")]
+        public string? Line { get; set; }
+
+        [StringLength(100, ErrorMessage = "Shift supervisor name cannot exceed 100 characters.")]
+        public string? ShiftSupervisor { get; set; }
+
+        [StringLength(100, ErrorMessage = "Machine name cannot exceed 100 characters.")]
+        public string? Machine { get; set; }
+
+        [StringLength(100, ErrorMessage = "Operator name cannot exceed 100 characters.")]
+        public string? OperatorName { get; set; }
+
+        [StringLength(100, ErrorMessage = "Section supervisor name cannot exceed 100 characters.")]
+        public string? SectionSupervisor { get; set; }
+
+        [ProductCode]
+        public string ProductCode { get; set; } = string.Empty;
+
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
+        public int Quantity { get; set; }
+
+        [RequiredNotEmpty]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
+        public string Operation { get; set; } = string.Empty;
+
+        [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
+        public int? CastingDefect { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
+        public int? ProcessingDefect { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
+        public int? Cleaning { get; set; }
+    }
+
+    public class UpdateProductionTrackingFormDto
+    {
+        [Required(ErrorMessage = "Date is required.")]
+        public DateTime Date { get; set; }
+
+        [RequiredNotEmpty]
+        [StringLength(50, MinimumLength = 1, ErrorMessage = "Shift must be between 1 and 50 characters.")]
+        public string Shift { get; set; } = string.Empty;
+
+        [StringLength(100, ErrorMessage = "Line cannot exceed 100 characters.")]
+        public string? Line { get; set; }
+
+        [StringLength(100, ErrorMessage = "Shift supervisor name cannot exceed 100 characters.")]
+        public string? ShiftSupervisor { get; set; }
+
+        [StringLength(100, ErrorMessage = "Machine name cannot exceed 100 characters.")]
+        public string? Machine { get; set; }
+
+        [StringLength(100, ErrorMessage = "Operator name cannot exceed 100 characters.")]
+        public string? OperatorName { get; set; }
+
+        [StringLength(100, ErrorMessage = "Section supervisor name cannot exceed 100 characters.")]
+        public string? SectionSupervisor { get; set; }
+
+        [ProductCode]
+        public string ProductCode { get; set; } = string.Empty;
+
+        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
+        public int Quantity { get; set; }
+
+        [RequiredNotEmpty]
+        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
+        public string Operation { get; set; } = string.Empty;
+
+        [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
+        public int? CastingDefect { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
+        public int? ProcessingDefect { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
+        public int? Cleaning { get; set; }
+    }
+
+    public class BulkCreateProductionTrackingFormDto
+    {
+        public List<CreateProductionTrackingFormDto> ProductionTrackingForms { get; set; } = new();
+    }
+}
