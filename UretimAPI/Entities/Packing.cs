@@ -12,6 +12,9 @@ namespace UretimAPI.Entities
         public int Quantity { get; set; }
         public string? ExplodedFrom { get; set; }
         public string? ExplodingTo { get; set; }
+
+        // New: optional relation to an order (nullable)
+        public int? RelatedWithOrder { get; set; }
         
         // Navigation property - Product null olamaz
         public Product Product { get; set; } = null!;

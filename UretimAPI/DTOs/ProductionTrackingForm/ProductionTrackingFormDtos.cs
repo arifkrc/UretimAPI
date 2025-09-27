@@ -20,6 +20,9 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         public int? CastingDefect { get; set; }
         public int? ProcessingDefect { get; set; }
         public int? Cleaning { get; set; }
+        public int? CycleTime { get; set; }
+        public double? OperatorEfficiency { get; set; }
+        public double? MachineEfficiency { get; set; }
         public DateTime AddedDateTime { get; set; }
         public bool IsActive { get; set; }
     }
@@ -58,14 +61,18 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
         public string Operation { get; set; } = string.Empty;
 
-        [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Casting defect cannot be negative.")]
         public int? CastingDefect { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Processing defect cannot be negative.")]
         public int? ProcessingDefect { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Cleaning cannot be negative.")]
         public int? Cleaning { get; set; }
+
+        public int? CycleTime { get; set; }
+        public double? OperatorEfficiency { get; set; }
+        public double? MachineEfficiency { get; set; }
     }
 
     public class UpdateProductionTrackingFormDto
@@ -102,14 +109,18 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
         public string Operation { get; set; } = string.Empty;
 
-        [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Casting defect cannot be negative.")]
         public int? CastingDefect { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Processing defect cannot be negative.")]
         public int? ProcessingDefect { get; set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
+        [Range(0, int.MaxValue, ErrorMessage = "Cleaning cannot be negative.")]
         public int? Cleaning { get; set; }
+
+        public int? CycleTime { get; set; }
+        public double? OperatorEfficiency { get; set; }
+        public double? MachineEfficiency { get; set; }
     }
 
     public class BulkCreateProductionTrackingFormDto

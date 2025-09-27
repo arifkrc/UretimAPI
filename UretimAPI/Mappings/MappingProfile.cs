@@ -81,13 +81,15 @@ namespace UretimAPI.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime));
 
             CreateMap<UpdateProductionTrackingFormDto, ProductionTrackingForm>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime));
 
             // Packing Mappings
             CreateMap<Packing, PackingDto>()
@@ -97,13 +99,19 @@ namespace UretimAPI.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => 
+                    src.Date == default(DateTime) ? UretimAPI.Helpers.DateTimeHelper.Now : src.Date))
+                .ForMember(dest => dest.RelatedWithOrder, opt => opt.MapFrom(src => src.RelatedWithOrder));
 
             CreateMap<UpdatePackingDto, Packing>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.Date, opt => opt.MapFrom(src => 
+                    src.Date == default(DateTime) ? UretimAPI.Helpers.DateTimeHelper.Now : src.Date))
+                .ForMember(dest => dest.RelatedWithOrder, opt => opt.MapFrom(src => src.RelatedWithOrder));
 
             // Order Mappings
             CreateMap<Order, OrderDto>();

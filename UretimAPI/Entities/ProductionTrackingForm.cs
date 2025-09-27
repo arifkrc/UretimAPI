@@ -26,6 +26,11 @@ namespace UretimAPI.Entities
         public int? DiamondChange { get; set; }
         public int? RawWaiting { get; set; }
         public int? Cleaning { get; set; }
+        public int? CycleTime { get; set; }
+
+        // New: efficiencies (nullable double)
+        public double? OperatorEfficiency { get; set; }
+        public double? MachineEfficiency { get; set; }
         
         // Navigation property - Product null olamaz
         public Product Product { get; set; } = null!;

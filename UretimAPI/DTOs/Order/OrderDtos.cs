@@ -35,7 +35,7 @@ namespace UretimAPI.DTOs.Order
         [ProductCode]
         public string ProductCode { get; set; } = string.Empty;
 
-        [StringLength(200, ErrorMessage = "Variants cannot exceed 200 characters.")]
+        // Variants allow large values (nvarchar(max) in DB)
         public string Variants { get; set; } = string.Empty;
 
         [Range(1, int.MaxValue, ErrorMessage = "Order count must be a positive integer.")]
@@ -61,7 +61,7 @@ namespace UretimAPI.DTOs.Order
         [ProductCode]
         public string ProductCode { get; set; } = string.Empty;
 
-        [StringLength(200, ErrorMessage = "Variants cannot exceed 200 characters.")]
+        // Variants allow large values (nvarchar(max) in DB)
         public string Variants { get; set; } = string.Empty;
 
         [Range(1, int.MaxValue, ErrorMessage = "Order count must be a positive integer.")]

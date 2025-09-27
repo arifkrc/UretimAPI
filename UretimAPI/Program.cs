@@ -10,6 +10,7 @@ using UretimAPI.Configuration;
 using UretimAPI.Middleware;
 using System.Text.Json.Serialization;
 using Serilog;
+using System.Text.RegularExpressions;
 
 // Configure Serilog early
 Log.Logger = new LoggerConfiguration()
@@ -25,10 +26,76 @@ try
     // Use Serilog
     builder.Host.UseSerilog();
 
+    // Load .env file if present (simple parser)
+    var envFile = Path.Combine(Directory.GetCurrentDirectory(), ".env");
+    if (File.Exists(envFile))
+    {
+        try
+        {
+            foreach (var line in File.ReadAllLines(envFile))
+            {
+                var trimmed = line.Trim();
+                if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
+                var idx = trimmed.IndexOf('=');
+                if (idx <= 0) continue;
+                var key = trimmed.Substring(0, idx).Trim();
+                var value = trimmed.Substring(idx + 1).Trim();
+                // Remove optional surrounding quotes
+                if ((value.StartsWith("\"") && value.EndsWith("\"")) || (value.StartsWith("'") && value.EndsWith("'")))
+                    value = value.Substring(1, value.Length - 2);
+
+                // Prefer existing environment variables over .env
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(key)))
+                {
+                    Environment.SetEnvironmentVariable(key, value);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to load .env file");
+        }
+    }
+
+    // Ensure configuration picks up environment variables and appsettings afterwards
+    builder.Configuration.AddEnvironmentVariables();
+
     // Configuration
     builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection(ApiSettings.SectionName));
     builder.Services.Configure<DatabaseSettings>(builder.Configuration.GetSection(DatabaseSettings.SectionName));
     builder.Services.Configure<PerformanceSettings>(builder.Configuration.GetSection(PerformanceSettings.SectionName));
+
+    // Log which connection string / database name will be used (don't log full connection string)
+    try
+    {
+        var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        string dbName = null;
+        if (!string.IsNullOrEmpty(defaultConnection))
+        {
+            // parse tokens like "Database=..." or "Initial Catalog=..."
+            var tokens = defaultConnection.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var t in tokens)
+            {
+                if (t.StartsWith("Database=", StringComparison.OrdinalIgnoreCase) || t.StartsWith("Initial Catalog=", StringComparison.OrdinalIgnoreCase))
+                {
+                    var parts = t.Split('=', 2);
+                    if (parts.Length == 2) dbName = parts[1];
+                    break;
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(dbName))
+            Log.Information("Configured EF default connection will use database: {Database}", dbName);
+        else if (!string.IsNullOrEmpty(defaultConnection))
+            Log.Information("Configured EF default connection string present but database name could not be parsed. Check configuration sources.");
+        else
+            Log.Warning("No DefaultConnection configured. EF will fail to connect unless overridden by environment or secret settings.");
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to parse DefaultConnection for logging");
+    }
 
     // Add services to the container with enhanced configuration
     builder.Services.AddControllers()
@@ -45,9 +112,54 @@ try
     // Entity Framework DbContext with extreme load configuration
     var databaseSettings = builder.Configuration.GetSection(DatabaseSettings.SectionName).Get<DatabaseSettings>() ?? new DatabaseSettings();
 
+    // Normalize connection string to ensure it targets UretimDB
+    var configuredConnection = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+    var finalConnection = configuredConnection;
+    try
+    {
+        if (!string.IsNullOrEmpty(configuredConnection))
+        {
+            // Parse and replace Database or Initial Catalog token to enforce UretimDB
+            var tokens = configuredConnection.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+            var hasDatabaseToken = false;
+            for (int i = 0; i < tokens.Count; i++)
+            {
+                var t = tokens[i];
+                if (t.StartsWith("Database=", StringComparison.OrdinalIgnoreCase) || t.StartsWith("Initial Catalog=", StringComparison.OrdinalIgnoreCase))
+                {
+                    tokens[i] = "Database=UretimDB";
+                    hasDatabaseToken = true;
+                    break;
+                }
+            }
+
+            if (!hasDatabaseToken)
+            {
+                // append Database token
+                tokens.Add("Database=UretimDB");
+            }
+
+            finalConnection = string.Join(';', tokens) + ";";
+
+            if (!configuredConnection.Equals(finalConnection, StringComparison.OrdinalIgnoreCase))
+            {
+                Log.Information("Overriding configured DefaultConnection database to 'UretimDB' for runtime to ensure correct target.");
+            }
+        }
+        else
+        {
+            Log.Warning("No DefaultConnection found in configuration; unable to enforce UretimDB.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to normalize DefaultConnection; falling back to configured value.");
+        finalConnection = configuredConnection;
+    }
+
     builder.Services.AddDbContext<UretimDbContext>(options =>
     {
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+        options.UseSqlServer(finalConnection, sqlOptions =>
         {
             sqlOptions.CommandTimeout(databaseSettings.CommandTimeoutSeconds);
             sqlOptions.EnableRetryOnFailure(
@@ -119,18 +231,23 @@ try
     {
         options.AddPolicy("DefaultPolicy", policy =>
         {
-            policy.WithOrigins(apiSettings.AllowedOrigins.Any() ? apiSettings.AllowedOrigins : new[] { "*" })
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .SetPreflightMaxAge(TimeSpan.FromMinutes(10)); // Cache preflight requests
-            
-            if (!apiSettings.AllowedOrigins.Any())
+            // If no specific origins configured -> allow any origin (development convenience)
+            if (apiSettings.AllowedOrigins == null || apiSettings.AllowedOrigins.Length == 0)
             {
-                policy.AllowAnyOrigin();
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             }
             else
             {
-                policy.AllowCredentials();
+                // Use explicit origins list
+                policy.WithOrigins(apiSettings.AllowedOrigins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader()
+                      // Only allow credentials if explicit origins (not wildcard)
+                      .AllowCredentials()
+                      .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             }
         });
     });
@@ -193,6 +310,23 @@ try
     });
 
     var app = builder.Build();
+
+    // Global permissive CORS middleware - allows all origins for all endpoints
+    app.Use(async (context, next) =>
+    {
+        context.Response.Headers["Access-Control-Allow-Origin"] = "*";
+        context.Response.Headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+        context.Response.Headers["Access-Control-Allow-Headers"] = "*";
+
+        if (string.Equals(context.Request.Method, "OPTIONS", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.StatusCode = 200;
+            await context.Response.CompleteAsync();
+            return;
+        }
+
+        await next();
+    });
 
     // Log application startup
     Log.Information("Starting Uretim API application with extreme load capacity");

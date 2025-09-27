@@ -43,11 +43,6 @@ namespace UretimAPI.Services.Implementations
 
         public async Task<OrderDto> CreateAsync(CreateOrderDto createDto)
         {
-            // Validate unique document number
-            var isUnique = await _unitOfWork.Orders.IsDocumentNoUniqueAsync(createDto.DocumentNo);
-            if (!isUnique)
-                throw new DuplicateException("Order", "DocumentNo", createDto.DocumentNo);
-
             // Validate that completed quantity doesn't exceed order count
             if (createDto.CompletedQuantity > createDto.OrderCount)
                 throw new ValidationException("Completed quantity cannot exceed order count", 
@@ -64,22 +59,6 @@ namespace UretimAPI.Services.Implementations
         {
             var createDtosList = createDtos.ToList();
             
-            // Validate all document numbers at once
-            var documentNos = createDtosList.Select(x => x.DocumentNo).ToList();
-            var existingOrders = await _unitOfWork.Orders.FindAsync(o => documentNos.Contains(o.DocumentNo));
-            var existingDocumentNos = existingOrders.Select(o => o.DocumentNo).ToList();
-            
-            var duplicateDocumentNos = documentNos.Where(dn => existingDocumentNos.Contains(dn)).ToList();
-            if (duplicateDocumentNos.Any())
-                throw new ValidationException("Duplicate document numbers found", 
-                    duplicateDocumentNos.Select(dn => $"Document number '{dn}' already exists").ToList());
-
-            // Check for duplicates within the input
-            var inputDuplicates = documentNos.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-            if (inputDuplicates.Any())
-                throw new ValidationException("Duplicate document numbers in input", 
-                    inputDuplicates.Select(dn => $"Document number '{dn}' appears multiple times in the request").ToList());
-
             // Validate that completed quantity doesn't exceed order count for all orders
             var invalidCompletedQuantities = createDtosList
                 .Where(dto => dto.CompletedQuantity > dto.OrderCount)

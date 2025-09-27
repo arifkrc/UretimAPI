@@ -10,7 +10,7 @@ namespace UretimAPI.Entities
         public string Description { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
         public int LastOperationId { get; set; }
-        
+
         // Navigation property
         public Operation LastOperation { get; set; } = null!;
         

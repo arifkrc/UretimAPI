@@ -116,7 +116,8 @@ namespace UretimAPI.Data
                 entity.Property(o => o.DocumentNo).IsRequired().HasMaxLength(100);
                 entity.Property(o => o.Customer).IsRequired().HasMaxLength(200);
                 entity.Property(o => o.ProductCode).IsRequired().HasMaxLength(50);
-                entity.Property(o => o.Variants).HasMaxLength(200);
+                // Variants no longer limited: allow nvarchar(max)
+                entity.Property(o => o.Variants).HasColumnType("nvarchar(max)");
             });
 
             // Optimized Indexes for Reporting (500 daily queries)
