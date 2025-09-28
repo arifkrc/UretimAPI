@@ -16,7 +16,10 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
-        public string Operation { get; set; } = string.Empty;
+        public int OperationId { get; set; }
+        public string OperationName { get; set; } = string.Empty;
+        public string? StartTime { get; set; } // format: HH:mm
+        public string? EndTime { get; set; }   // format: HH:mm
         public int? CastingDefect { get; set; }
         public int? ProcessingDefect { get; set; }
         public int? Cleaning { get; set; }
@@ -57,9 +60,15 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
         public int Quantity { get; set; }
 
-        [RequiredNotEmpty]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
-        public string Operation { get; set; } = string.Empty;
+        [Range(1, int.MaxValue, ErrorMessage = "OperationId must be a positive integer.")]
+        public int OperationId { get; set; }
+
+        // Optional time strings in HH:mm 24-hour format
+        [RegularExpression("^([01]\\d|2[0-3]):[0-5]\\d$", ErrorMessage = "StartTime must be in HH:mm 24-hour format.")]
+        public string? StartTime { get; set; }
+
+        [RegularExpression("^([01]\\d|2[0-3]):[0-5]\\d$", ErrorMessage = "EndTime must be in HH:mm 24-hour format.")]
+        public string? EndTime { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Casting defect cannot be negative.")]
         public int? CastingDefect { get; set; }
@@ -105,9 +114,14 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
         public int Quantity { get; set; }
 
-        [RequiredNotEmpty]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
-        public string Operation { get; set; } = string.Empty;
+        [Range(1, int.MaxValue, ErrorMessage = "OperationId must be a positive integer.")]
+        public int OperationId { get; set; }
+
+        [RegularExpression("^([01]\\d|2[0-3]):[0-5]\\d$", ErrorMessage = "StartTime must be in HH:mm 24-hour format.")]
+        public string? StartTime { get; set; }
+
+        [RegularExpression("^([01]\\d|2[0-3]):[0-5]\\d$", ErrorMessage = "EndTime must be in HH:mm 24-hour format.")]
+        public string? EndTime { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Casting defect cannot be negative.")]
         public int? CastingDefect { get; set; }

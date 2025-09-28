@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UretimAPI.Entities;
 
 namespace UretimAPI.Data
@@ -16,6 +17,7 @@ namespace UretimAPI.Data
         public DbSet<ProductionTrackingForm> ProductionTrackingForms { get; set; }
         public DbSet<Packing> Packings { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<Shipment> Shipments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -29,7 +31,7 @@ namespace UretimAPI.Data
                 entity.Property(p => p.Name).IsRequired().HasMaxLength(200);
                 entity.Property(p => p.Description).HasMaxLength(500);
                 entity.Property(p => p.Type).IsRequired().HasMaxLength(100);
-                
+
                 // LastOperation relationship
                 entity.HasOne(p => p.LastOperation)
                       .WithMany(o => o.ProductsWithLastOperation)
@@ -49,19 +51,19 @@ namespace UretimAPI.Data
             modelBuilder.Entity<CycleTime>(entity =>
             {
                 entity.HasKey(c => c.Id);
-                
+
                 // Product relationship
                 entity.HasOne(c => c.Product)
                       .WithMany(p => p.CycleTimes)
                       .HasForeignKey(c => c.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
-                
+
                 // Operation relationship
                 entity.HasOne(c => c.Operation)
                       .WithMany(o => o.CycleTimes)
                       .HasForeignKey(c => c.OperationId)
                       .OnDelete(DeleteBehavior.Cascade);
-                
+
                 // Unique constraint for ProductId-OperationId combination (only for active records)
                 entity.HasIndex(c => new { c.ProductId, c.OperationId })
                       .IsUnique()
@@ -80,14 +82,28 @@ namespace UretimAPI.Data
                 entity.Property(p => p.OperatorName).HasMaxLength(100);
                 entity.Property(p => p.SectionSupervisor).HasMaxLength(100);
                 entity.Property(p => p.ProductCode).IsRequired().HasMaxLength(50);
-                entity.Property(p => p.Operation).IsRequired().HasMaxLength(100);
-                
+
+                // Relationship to Operation via OperationId
+                entity.HasOne(p => p.Operation)
+                      .WithMany(o => o.ProductionTrackingForms)
+                      .HasForeignKey(p => p.OperationId)
+                      .OnDelete(DeleteBehavior.Restrict);
+
                 // Product relationship
                 entity.HasOne(p => p.Product)
                       .WithMany(pr => pr.ProductionTrackingForms)
                       .HasPrincipalKey(pr => pr.ProductCode)
                       .HasForeignKey(p => p.ProductCode)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                // Convert existing DateTime DB columns to TimeSpan in CLR (handles legacy datetime columns)
+                var timeSpanConverter = new ValueConverter<TimeSpan?, DateTime?>(
+                    v => v.HasValue ? (DateTime?)(DateTime.MinValue + v.Value) : null,
+                    v => v.HasValue ? (TimeSpan?)(v.Value.TimeOfDay) : null
+                );
+
+                entity.Property(p => p.StartTime).HasConversion(timeSpanConverter);
+                entity.Property(p => p.EndTime).HasConversion(timeSpanConverter);
             });
 
             // Packing Configuration
@@ -99,7 +115,7 @@ namespace UretimAPI.Data
                 entity.Property(p => p.ProductCode).IsRequired().HasMaxLength(50);
                 entity.Property(p => p.ExplodedFrom).HasMaxLength(100);
                 entity.Property(p => p.ExplodingTo).HasMaxLength(100);
-                
+
                 // Product relationship
                 entity.HasOne(p => p.Product)
                       .WithMany(pr => pr.Packings)
@@ -118,6 +134,23 @@ namespace UretimAPI.Data
                 entity.Property(o => o.ProductCode).IsRequired().HasMaxLength(50);
                 // Variants no longer limited: allow nvarchar(max)
                 entity.Property(o => o.Variants).HasColumnType("nvarchar(max)");
+            });
+
+            // Shipment Configuration
+            modelBuilder.Entity<Shipment>(entity =>
+            {
+                entity.HasKey(s => s.Id);
+                entity.Property(s => s.Date).IsRequired();
+                entity.Property(s => s.Disk).HasColumnType("int");
+                entity.Property(s => s.Kampana).HasColumnType("int");
+                entity.Property(s => s.Poyra).HasColumnType("int");
+                entity.Property(s => s.Abroad).HasColumnType("bit");
+                entity.Property(s => s.Domestic).HasColumnType("bit");
+                entity.Property(s => s.AddedDateTime).IsRequired();
+                entity.Property(s => s.IsActive).IsRequired();
+
+                // Indexes
+                entity.HasIndex(s => new { s.Date, s.IsActive }).HasDatabaseName("IX_Shipment_Date_IsActive");
             });
 
             // Optimized Indexes for Reporting (500 daily queries)
@@ -158,8 +191,8 @@ namespace UretimAPI.Data
                 .HasDatabaseName("IX_PTF_Shift_Date_IsActive");
 
             modelBuilder.Entity<ProductionTrackingForm>()
-                .HasIndex(p => new { p.Operation, p.Date, p.IsActive })
-                .HasDatabaseName("IX_PTF_Operation_Date_IsActive");
+                .HasIndex(p => new { p.OperationId, p.Date, p.IsActive })
+                .HasDatabaseName("IX_PTF_OperationId_Date_IsActive");
 
             // Packing indexes for reporting
             modelBuilder.Entity<Packing>()

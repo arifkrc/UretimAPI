@@ -194,6 +194,7 @@ try
     builder.Services.AddScoped<IProductionTrackingFormRepository, ProductionTrackingFormRepository>();
     builder.Services.AddScoped<IPackingRepository, PackingRepository>();
     builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+    builder.Services.AddScoped<IShipmentRepository, ShipmentRepository>();
 
     // Service Pattern
     builder.Services.AddScoped<IProductService, ProductService>();
@@ -202,6 +203,8 @@ try
     builder.Services.AddScoped<IProductionTrackingFormService, ProductionTrackingFormService>();
     builder.Services.AddScoped<IPackingService, PackingService>();
     builder.Services.AddScoped<IOrderService, OrderService>();
+    builder.Services.AddScoped<IShipmentService, ShipmentService>();
+    builder.Services.AddScoped<IReportingService, ReportingService>();
 
     // Caching Service
     builder.Services.AddSingleton<ICacheService, MemoryCacheService>();

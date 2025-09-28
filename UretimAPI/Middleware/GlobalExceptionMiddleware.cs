@@ -33,6 +33,11 @@ namespace UretimAPI.Middleware
         {
             context.Response.ContentType = "application/json";
 
+            // Build error details for default case including exception messages to aid debugging
+            var defaultErrors = new List<string> { exception.Message };
+            if (exception.InnerException != null)
+                defaultErrors.Add(exception.InnerException.Message);
+
             var response = exception switch
             {
                 NotFoundException notFoundEx => new ApiResponse<object>
@@ -66,9 +71,9 @@ namespace UretimAPI.Middleware
                 _ => new ApiResponse<object>
                 {
                     Success = false,
-                    Message = "An internal server error occurred.",
+                    Message = exception.Message,
                     Data = null,
-                    Errors = new List<string> { "Internal server error" }
+                    Errors = defaultErrors
                 }
             };
 

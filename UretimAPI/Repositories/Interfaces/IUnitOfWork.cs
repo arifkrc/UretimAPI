@@ -2,7 +2,7 @@ using UretimAPI.Repositories.Interfaces;
 
 namespace UretimAPI.Repositories.Interfaces
 {
-    public interface IUnitOfWork : IDisposable
+    public interface IUnitOfWork
     {
         // Repository Properties
         IProductRepository Products { get; }
@@ -11,7 +11,8 @@ namespace UretimAPI.Repositories.Interfaces
         IProductionTrackingFormRepository ProductionTrackingForms { get; }
         IPackingRepository Packings { get; }
         IOrderRepository Orders { get; }
-        
+        IShipmentRepository Shipments { get; }
+
         // Transaction Methods
         Task<int> SaveChangesAsync();
         Task BeginTransactionAsync();

@@ -75,21 +75,31 @@ namespace UretimAPI.Mappings
 
             // ProductionTrackingForm Mappings
             CreateMap<ProductionTrackingForm, ProductionTrackingFormDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.OperationName, opt => opt.MapFrom(src => src.Operation.Name))
+                .ForMember(dest => dest.OperationId, opt => opt.MapFrom(src => src.OperationId))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.StartTime.HasValue ? src.StartTime.Value.ToString(@"hh\:mm") : null))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.EndTime.HasValue ? src.EndTime.Value.ToString(@"hh\:mm") : null));
 
             CreateMap<CreateProductionTrackingFormDto, ProductionTrackingForm>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore())
-                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime));
+                .ForMember(dest => dest.Operation, opt => opt.Ignore())
+                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.StartTime) ? (TimeSpan?)null : TimeSpan.ParseExact(src.StartTime, @"hh\:mm", null)))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.EndTime) ? (TimeSpan?)null : TimeSpan.ParseExact(src.EndTime, @"hh\:mm", null)));
 
             CreateMap<UpdateProductionTrackingFormDto, ProductionTrackingForm>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore())
-                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime));
+                .ForMember(dest => dest.Operation, opt => opt.Ignore())
+                .ForMember(dest => dest.CycleTime, opt => opt.MapFrom(src => src.CycleTime))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.StartTime) ? (TimeSpan?)null : TimeSpan.ParseExact(src.StartTime, @"hh\:mm", null)))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => string.IsNullOrWhiteSpace(src.EndTime) ? (TimeSpan?)null : TimeSpan.ParseExact(src.EndTime, @"hh\:mm", null)));
 
             // Packing Mappings
             CreateMap<Packing, PackingDto>()
@@ -125,6 +135,20 @@ namespace UretimAPI.Mappings
                 .ForMember(dest => dest.DocumentNo, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore());
+
+            // Shipment mappings
+            CreateMap<Shipment, DTOs.Shipment.ShipmentDto>();
+            CreateMap<DTOs.Shipment.CreateShipmentDto, Shipment>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore());
+            CreateMap<DTOs.Shipment.UpdateShipmentDto, Shipment>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
+                .ForMember(dest => dest.IsActive, opt => opt.Ignore());
+
+            // Reporting mappings (no AutoMapper heavy usage currently)
+            CreateMap<DTOs.Reports.ProductionReportDto, DTOs.Reports.ProductionReportDto>();
         }
     }
 }

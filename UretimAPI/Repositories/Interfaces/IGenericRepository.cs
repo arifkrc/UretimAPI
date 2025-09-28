@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Linq.Expressions;
 
 namespace UretimAPI.Repositories.Interfaces
@@ -10,6 +11,9 @@ namespace UretimAPI.Repositories.Interfaces
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate);
         Task<T?> GetFirstOrDefaultAsync(Expression<Func<T, bool>> predicate);
+
+        // Expose IQueryable for advanced DB-level queries
+        IQueryable<T> Query();
         
         // Paging
         Task<(IEnumerable<T> Items, int TotalCount)> GetPagedAsync(

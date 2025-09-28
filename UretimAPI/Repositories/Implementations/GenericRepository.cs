@@ -165,5 +165,10 @@ namespace UretimAPI.Repositories.Implementations
         {
             return await _dbSet.AsNoTracking().CountAsync(predicate);
         }
+
+        public IQueryable<T> Query()
+        {
+            return _dbSet.AsNoTracking();
+        }
     }
 }

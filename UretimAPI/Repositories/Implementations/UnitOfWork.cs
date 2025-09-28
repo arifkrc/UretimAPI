@@ -24,6 +24,7 @@ namespace UretimAPI.Repositories.Implementations
         public IProductionTrackingFormRepository ProductionTrackingForms => GetRepository<IProductionTrackingFormRepository>(() => new ProductionTrackingFormRepository(_context));
         public IPackingRepository Packings => GetRepository<IPackingRepository>(() => new PackingRepository(_context));
         public IOrderRepository Orders => GetRepository<IOrderRepository>(() => new OrderRepository(_context));
+        public IShipmentRepository Shipments => GetRepository<IShipmentRepository>(() => new ShipmentRepository(_context));
 
         public async Task<int> SaveChangesAsync()
         {

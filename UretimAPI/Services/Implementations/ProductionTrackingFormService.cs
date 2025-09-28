@@ -4,6 +4,7 @@ using UretimAPI.Entities;
 using UretimAPI.Exceptions;
 using UretimAPI.Repositories.Interfaces;
 using UretimAPI.Services.Interfaces;
+using System.Linq.Expressions;
 
 namespace UretimAPI.Services.Implementations
 {
@@ -36,9 +37,43 @@ namespace UretimAPI.Services.Implementations
             return ptf != null ? _mapper.Map<ProductionTrackingFormDto>(ptf) : null;
         }
 
+        public async Task<(IEnumerable<ProductionTrackingFormDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm = null, bool? isActive = null)
+        {
+            Expression<Func<ProductionTrackingForm, bool>>? filter = null;
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                // If searchTerm is numeric, allow searching by OperationId as exact match
+                if (int.TryParse(searchTerm, out var opId))
+                {
+                    filter = p => (p.ProductCode.Contains(searchTerm) || p.Shift.Contains(searchTerm) || p.Operation != null && p.Operation.Name.Contains(searchTerm) || p.OperationId == opId) &&
+                                  (!isActive.HasValue || p.IsActive == isActive.Value);
+                }
+                else
+                {
+                    filter = p => (p.ProductCode.Contains(searchTerm) || p.Shift.Contains(searchTerm) || (p.Operation != null && p.Operation.Name.Contains(searchTerm))) &&
+                                  (!isActive.HasValue || p.IsActive == isActive.Value);
+                }
+            }
+            else
+            {
+                filter = p => !isActive.HasValue || p.IsActive == isActive.Value;
+            }
+
+            var (ptfs, totalCount) = await _unitOfWork.ProductionTrackingForms.GetPagedAsync(
+                pageNumber,
+                pageSize,
+                filter: filter,
+                orderBy: q => q.OrderByDescending(p => p.Date)
+            );
+
+            var ptfDtos = _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
+            return (ptfDtos, totalCount);
+        }
+
         public async Task<(IEnumerable<ProductionTrackingFormDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm = null)
         {
-            return await GetPagedAsync(pageNumber, pageSize, searchTerm, true); // Default olarak sadece aktif olanlar
+            return await GetPagedAsync(pageNumber, pageSize, searchTerm, true);
         }
 
         public async Task<ProductionTrackingFormDto> CreateAsync(CreateProductionTrackingFormDto createDto)
@@ -47,6 +82,11 @@ namespace UretimAPI.Services.Implementations
             var product = await _unitOfWork.Products.GetByProductCodeAsync(createDto.ProductCode);
             if (product == null)
                 throw new NotFoundException("Product", createDto.ProductCode);
+
+            // Validate operation exists
+            var operation = await _unitOfWork.Operations.GetByIdAsync(createDto.OperationId);
+            if (operation == null)
+                throw new NotFoundException("Operation", createDto.OperationId);
 
             var ptf = _mapper.Map<ProductionTrackingForm>(createDto);
             var createdPtf = await _unitOfWork.ProductionTrackingForms.AddAsync(ptf);
@@ -58,16 +98,24 @@ namespace UretimAPI.Services.Implementations
         public async Task<IEnumerable<ProductionTrackingFormDto>> CreateBulkAsync(IEnumerable<CreateProductionTrackingFormDto> createDtos)
         {
             var createDtosList = createDtos.ToList();
-            
+
             // Validate all product codes at once
             var productCodes = createDtosList.Select(x => x.ProductCode).Distinct().ToList();
             var existingProducts = await _unitOfWork.Products.FindAsync(p => productCodes.Contains(p.ProductCode));
             var existingProductCodes = existingProducts.Select(p => p.ProductCode).ToList();
             var missingProductCodes = productCodes.Except(existingProductCodes).ToList();
-            
+
             if (missingProductCodes.Any())
                 throw new ValidationException("Products not found", 
                     missingProductCodes.Select(code => $"Product with code '{code}' not found").ToList());
+
+            // Validate all operations exist
+            var operationIds = createDtosList.Select(x => x.OperationId).Distinct().ToList();
+            var existingOperations = await _unitOfWork.Operations.FindAsync(o => operationIds.Contains(o.Id));
+            var existingOperationIds = existingOperations.Select(o => o.Id).ToList();
+            var missingOperationIds = operationIds.Except(existingOperationIds).ToList();
+            if (missingOperationIds.Any())
+                throw new ValidationException("Operations not found", missingOperationIds.Select(id => $"Operation with ID {id} not found").ToList());
 
             var ptfs = _mapper.Map<List<ProductionTrackingForm>>(createDtosList);
             var createdPtfs = await _unitOfWork.ProductionTrackingForms.AddRangeAsync(ptfs);
@@ -86,6 +134,11 @@ namespace UretimAPI.Services.Implementations
             var product = await _unitOfWork.Products.GetByProductCodeAsync(updateDto.ProductCode);
             if (product == null)
                 throw new NotFoundException("Product", updateDto.ProductCode);
+
+            // Validate operation exists
+            var operation = await _unitOfWork.Operations.GetByIdAsync(updateDto.OperationId);
+            if (operation == null)
+                throw new NotFoundException("Operation", updateDto.OperationId);
 
             _mapper.Map(updateDto, existingPtf);
             await _unitOfWork.ProductionTrackingForms.UpdateAsync(existingPtf);
@@ -116,27 +169,6 @@ namespace UretimAPI.Services.Implementations
             return result > 0;
         }
 
-        public async Task<bool> BulkSoftDeleteAsync(IEnumerable<int> ids)
-        {
-            var idsList = ids.ToList();
-            
-            // Validate all IDs exist
-            var existingPtfs = await _unitOfWork.ProductionTrackingForms.FindAsync(p => idsList.Contains(p.Id));
-            var existingIds = existingPtfs.Select(p => p.Id).ToList();
-            var nonExistingIds = idsList.Except(existingIds).ToList();
-            
-            if (nonExistingIds.Any())
-                throw new ValidationException("ProductionTrackingForms not found", 
-                    nonExistingIds.Select(id => $"ProductionTrackingForm with ID {id} not found").ToList());
-
-            foreach (var id in existingIds)
-            {
-                await _unitOfWork.ProductionTrackingForms.SoftDeleteAsync(id);
-            }
-            var result = await _unitOfWork.SaveChangesAsync();
-            return result > 0;
-        }
-
         public async Task<bool> ExistsAsync(int id)
         {
             return await _unitOfWork.ProductionTrackingForms.ExistsAsync(id);
@@ -160,9 +192,9 @@ namespace UretimAPI.Services.Implementations
             return _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
         }
 
-        public async Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(string operation)
+        public async Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(int operationId)
         {
-            var ptfs = await _unitOfWork.ProductionTrackingForms.GetByOperationAsync(operation);
+            var ptfs = await _unitOfWork.ProductionTrackingForms.GetByOperationAsync(operationId);
             return _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
         }
 
@@ -190,19 +222,28 @@ namespace UretimAPI.Services.Implementations
             return _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
         }
 
-        public async Task<(IEnumerable<ProductionTrackingFormDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, string? searchTerm = null, bool? isActive = null)
+        public async Task<bool> BulkSoftDeleteAsync(IEnumerable<int> ids)
         {
-            var (ptfs, totalCount) = await _unitOfWork.ProductionTrackingForms.GetPagedAsync(
-                pageNumber, 
-                pageSize,
-                filter: p => 
-                    (string.IsNullOrEmpty(searchTerm) || p.ProductCode.Contains(searchTerm) || p.Operation.Contains(searchTerm) || p.Shift.Contains(searchTerm)) &&
-                    (!isActive.HasValue || p.IsActive == isActive.Value),
-                orderBy: q => q.OrderByDescending(p => p.Date)
-            );
+            var idsList = ids.ToList();
+            
+            if (idsList.Count == 0)
+                throw new ValidationException("ProductionTrackingForms not found", new List<string> { "At least one ID must be provided" });
 
-            var ptfDtos = _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
-            return (ptfDtos, totalCount);
+            // Validate all IDs exist
+            var existingPtfs = await _unitOfWork.ProductionTrackingForms.FindAsync(p => idsList.Contains(p.Id));
+            var existingIds = existingPtfs.Select(p => p.Id).ToList();
+            var nonExistingIds = idsList.Except(existingIds).ToList();
+
+            if (nonExistingIds.Any())
+                throw new ValidationException("ProductionTrackingForms not found", 
+                    nonExistingIds.Select(id => $"ProductionTrackingForm with ID {id} not found").ToList());
+
+            foreach (var id in existingIds)
+            {
+                await _unitOfWork.ProductionTrackingForms.SoftDeleteAsync(id);
+            }
+            var result = await _unitOfWork.SaveChangesAsync();
+            return result > 0;
         }
     }
 }

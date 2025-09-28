@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UretimAPI.Data;
 
@@ -11,9 +12,11 @@ using UretimAPI.Data;
 namespace UretimAPI.Migrations
 {
     [DbContext(typeof(UretimDbContext))]
-    partial class UretimDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250927162423_efficiency_realtedopretionPTF_added")]
+    partial class efficiency_realtedopretionPTF_added
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -358,46 +361,6 @@ namespace UretimAPI.Migrations
                         .HasDatabaseName("IX_PTF_Shift_Date_IsActive");
 
                     b.ToTable("ProductionTrackingForms");
-                });
-
-            modelBuilder.Entity("UretimAPI.Entities.Shipment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<bool>("Abroad")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime>("AddedDateTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("Disk")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("Domestic")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("Kampana")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("Poyra")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Date", "IsActive")
-                        .HasDatabaseName("IX_Shipment_Date_IsActive");
-
-                    b.ToTable("Shipments");
                 });
 
             modelBuilder.Entity("UretimAPI.Entities.CycleTime", b =>

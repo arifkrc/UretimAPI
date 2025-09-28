@@ -14,9 +14,14 @@ namespace UretimAPI.Entities
         public string? SectionSupervisor { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public int Quantity { get; set; }
-        public string Operation { get; set; } = string.Empty;
-        public DateTime? StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
+        
+        // Replace free-text Operation with relation to Operation entity
+        public int OperationId { get; set; }
+        public Operation Operation { get; set; } = null!;
+
+        // Store time-only values as TimeSpan? (HH:mm)
+        public TimeSpan? StartTime { get; set; }
+        public TimeSpan? EndTime { get; set; }
         
         // Defect and downtime fields - nullable
         public int? CastingDefect { get; set; }

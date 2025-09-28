@@ -170,47 +170,57 @@ namespace UretimAPI.Controllers
             [FromQuery][StringLength(100)] string? searchTerm = null,
             [FromQuery] string status = "active")
         {
-            if (pageNumber < 1)
+            try
             {
-                _logger.LogWarning("Invalid page number: {PageNumber}", pageNumber);
-                return BadRequest(ApiResponse<PagedResult<ProductionTrackingFormDto>>.ErrorResult("Page number must be greater than 0"));
+                if (pageNumber < 1)
+                {
+                    _logger.LogWarning("Invalid page number: {PageNumber}", pageNumber);
+                    return BadRequest(ApiResponse<PagedResult<ProductionTrackingFormDto>>.ErrorResult("Page number must be greater than 0"));
+                }
+
+                if (pageSize <= 0) pageSize = _apiSettings.DefaultPageSize;
+                if (pageSize > _apiSettings.MaxPageSize) pageSize = _apiSettings.MaxPageSize;
+
+                _logger.LogInformation("Retrieving paged production tracking forms - Page: {PageNumber}, Size: {PageSize}, Search: {SearchTerm}, Status: {Status}", 
+                    pageNumber, pageSize, searchTerm ?? "none", status);
+
+                bool? isActive = status.ToLower() switch
+                {
+                    "active" => true,
+                    "inactive" => false,
+                    "all" => null,
+                    _ => true // Default to active
+                };
+
+                var (items, totalCount) = await _ptfService.GetPagedAsync(pageNumber, pageSize, searchTerm, isActive);
+                
+                var pagedResult = new PagedResult<ProductionTrackingFormDto>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+
+                _logger.LogInformation("Retrieved {ItemCount} production tracking forms from page {PageNumber} (total: {TotalCount}) with status {Status}", 
+                    items.Count(), pageNumber, totalCount, status);
+
+                Response.Headers.Add("X-Cache", "MISS");
+                Response.Headers.Add("X-Status-Filter", status);
+                Response.Headers.Add("X-Total-Count", totalCount.ToString());
+                Response.Headers.Add("X-Page-Number", pageNumber.ToString());
+                Response.Headers.Add("X-Page-Size", pageSize.ToString());
+                Response.Headers.Add("X-Total-Pages", pagedResult.TotalPages.ToString());
+
+                return Ok(ApiResponse<PagedResult<ProductionTrackingFormDto>>.SuccessResult(pagedResult, "Production tracking forms retrieved successfully"));
             }
-
-            if (pageSize <= 0) pageSize = _apiSettings.DefaultPageSize;
-            if (pageSize > _apiSettings.MaxPageSize) pageSize = _apiSettings.MaxPageSize;
-
-            _logger.LogInformation("Retrieving paged production tracking forms - Page: {PageNumber}, Size: {PageSize}, Search: {SearchTerm}, Status: {Status}", 
-                pageNumber, pageSize, searchTerm ?? "none", status);
-
-            bool? isActive = status.ToLower() switch
+            catch (Exception ex)
             {
-                "active" => true,
-                "inactive" => false,
-                "all" => null,
-                _ => true // Default to active
-            };
-
-            var (items, totalCount) = await _ptfService.GetPagedAsync(pageNumber, pageSize, searchTerm, isActive);
-            
-            var pagedResult = new PagedResult<ProductionTrackingFormDto>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-
-            _logger.LogInformation("Retrieved {ItemCount} production tracking forms from page {PageNumber} (total: {TotalCount}) with status {Status}", 
-                items.Count(), pageNumber, totalCount, status);
-
-            Response.Headers.Add("X-Cache", "MISS");
-            Response.Headers.Add("X-Status-Filter", status);
-            Response.Headers.Add("X-Total-Count", totalCount.ToString());
-            Response.Headers.Add("X-Page-Number", pageNumber.ToString());
-            Response.Headers.Add("X-Page-Size", pageSize.ToString());
-            Response.Headers.Add("X-Total-Pages", pagedResult.TotalPages.ToString());
-
-            return Ok(ApiResponse<PagedResult<ProductionTrackingFormDto>>.SuccessResult(pagedResult, "Production tracking forms retrieved successfully"));
+                _logger.LogError(ex, "Error while getting paged production tracking forms");
+                var errors = new List<string> { ex.Message };
+                if (ex.InnerException != null) errors.Add(ex.InnerException.Message);
+                return StatusCode(500, ApiResponse<PagedResult<ProductionTrackingFormDto>>.ErrorResult("Internal server error", errors));
+            }
         }
 
         /// <summary>

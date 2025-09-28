@@ -7,63 +7,31 @@ namespace UretimAPI.Repositories.Implementations
 {
     public class ProductRepository : GenericRepository<Product>, IProductRepository
     {
-        public ProductRepository(UretimDbContext context) : base(context)
-        {
-        }
+        public ProductRepository(UretimDbContext context) : base(context) { }
 
         public async Task<Product?> GetByProductCodeAsync(string productCode)
         {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .FirstOrDefaultAsync(p => p.ProductCode == productCode && p.IsActive);
-        }
-
-        public async Task<IEnumerable<Product>> GetByTypeAsync(string type)
-        {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .Where(p => p.Type == type && p.IsActive)
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<Product>> GetByLastOperationAsync(int operationId)
-        {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .Where(p => p.LastOperationId == operationId && p.IsActive)
-                .ToListAsync();
+            return await _dbSet.FirstOrDefaultAsync(p => p.ProductCode == productCode && p.IsActive);
         }
 
         public async Task<bool> IsProductCodeUniqueAsync(string productCode, int? excludeId = null)
         {
-            var query = _dbSet.Where(p => p.ProductCode == productCode);
-            
-            if (excludeId.HasValue)
-                query = query.Where(p => p.Id != excludeId.Value);
-            
-            return !await query.AnyAsync();
+            return !await _dbSet.AnyAsync(p => p.ProductCode == productCode && (!excludeId.HasValue || p.Id != excludeId.Value));
         }
 
-        public override async Task<Product?> GetByIdAsync(int id)
+        public async Task<IEnumerable<Product>> GetAllActiveAsync()
         {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            return await _dbSet.Where(p => p.IsActive).ToListAsync();
         }
 
-        public override async Task<IEnumerable<Product>> GetAllAsync()
+        public async Task<IEnumerable<Product>> GetByTypeAsync(string type)
         {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .ToListAsync();
+            return await _dbSet.Where(p => p.Type == type && p.IsActive).ToListAsync();
         }
 
-        public override async Task<IEnumerable<Product>> GetAllActiveAsync()
+        public async Task<IEnumerable<Product>> GetByLastOperationAsync(int operationId)
         {
-            return await _dbSet
-                .Include(p => p.LastOperation)
-                .Where(p => p.IsActive)
-                .ToListAsync();
+            return await _dbSet.Where(p => p.LastOperationId == operationId && p.IsActive).ToListAsync();
         }
     }
 }
