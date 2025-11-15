@@ -71,6 +71,24 @@ namespace UretimAPI.DTOs.Reports
         public IEnumerable<CarryoverCountDto> Buckets { get; set; } = new List<CarryoverCountDto>();
     }
 
+    public class CarryoverDetailsDto
+    {
+        public int OrderId { get; set; }
+        public string OrderNumber { get; set; } = string.Empty; // DocumentNo
+        public string ProductCode { get; set; } = string.Empty;
+        public string ProductName { get; set; } = string.Empty;
+        public string ProductType { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
+        public int OrderCount { get; set; }
+        public int CompletedQuantity { get; set; }
+        public int Carryover { get; set; }
+        public int DelayDays { get; set; } // Calculated field based on carryover
+        public string OrderWeek { get; set; } = string.Empty; // OrderAddedDateTime
+        public DateTime OrderCreatedDate { get; set; } // AddedDateTime
+        public string Variants { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+    }
+
     public class DailyReportDto
     {
         public DateTime Date { get; set; }

@@ -11,5 +11,6 @@ namespace UretimAPI.Services.Interfaces
         Task<ProductionTotalsDto> GetProductionTotalsForDateAsync(DateTime date);
         Task<int> GetTotalProducedAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<CarryoverByTypeDto>> GetCarryoverCountsForDateAsync(DateTime date);
+        Task<IEnumerable<CarryoverDetailsDto>> GetCarryoverDetailsAsync(DateTime? date = null, string? productType = null, int? carryoverValue = null, bool includeDetails = true);
     }
 }

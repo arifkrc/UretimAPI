@@ -244,5 +244,110 @@ namespace UretimAPI.Services.Implementations
 
             return result;
         }
+
+        public async Task<IEnumerable<CarryoverDetailsDto>> GetCarryoverDetailsAsync(DateTime? date = null, string? productType = null, int? carryoverValue = null, bool includeDetails = true)
+        {
+            try
+            {
+                _logger.LogInformation("Getting carryover details with filters: date={Date}, productType={ProductType}, carryoverValue={CarryoverValue}, includeDetails={IncludeDetails}", 
+                    date, productType, carryoverValue, includeDetails);
+
+                // Get all active orders with carryover > 0
+                var ordersQuery = _unitOfWork.Repository<Order>().Query()
+                    .Where(o => o.IsActive && o.Carryover > 0);
+
+                // Apply date filter if provided (filter by order creation date)
+                if (date.HasValue)
+                {
+                    var targetDate = date.Value.Date;
+                    var nextDay = targetDate.AddDays(1);
+                    ordersQuery = ordersQuery.Where(o => o.AddedDateTime >= targetDate && o.AddedDateTime < nextDay);
+                }
+
+                var orders = await ordersQuery.ToListAsync();
+
+                if (!orders.Any())
+                {
+                    _logger.LogInformation("No carryover orders found with the specified filters");
+                    return new List<CarryoverDetailsDto>();
+                }
+
+                // Get product information for product names and types
+                var productCodes = orders.Select(o => o.ProductCode).Distinct().ToList();
+                var products = await _unitOfWork.Repository<Product>().Query()
+                    .Where(p => productCodes.Contains(p.ProductCode) && p.IsActive)
+                    .ToListAsync();
+
+                var productMap = products.ToDictionary(p => p.ProductCode, p => new { p.Name, p.Type }, StringComparer.OrdinalIgnoreCase);
+
+                // Build result list
+                var result = new List<CarryoverDetailsDto>();
+
+                foreach (var order in orders)
+                {
+                    // Get product information
+                    var productInfo = productMap.ContainsKey(order.ProductCode) 
+                        ? productMap[order.ProductCode] 
+                        : new { Name = "Unknown Product", Type = "Unknown" };
+
+                    // Apply product type filter if specified
+                    if (!string.IsNullOrWhiteSpace(productType) && 
+                        !string.Equals(productInfo.Type, productType, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Calculate actual carryover value (capped at 15 for filtering purposes)
+                    var actualCarryover = order.Carryover;
+                    var carryoverForFiltering = actualCarryover >= 15 ? 15 : actualCarryover;
+
+                    // Apply carryover value filter if specified
+                    if (carryoverValue.HasValue && carryoverForFiltering != carryoverValue.Value)
+                    {
+                        continue;
+                    }
+
+                    // Parse order week from OrderAddedDateTime if possible
+                    var orderWeek = !string.IsNullOrWhiteSpace(order.OrderAddedDateTime) 
+                        ? order.OrderAddedDateTime 
+                        : "Unknown";
+
+                    var carryoverDetail = new CarryoverDetailsDto
+                    {
+                        OrderId = order.Id,
+                        OrderNumber = order.DocumentNo,
+                        ProductCode = order.ProductCode,
+                        ProductName = productInfo.Name,
+                        ProductType = productInfo.Type,
+                        CustomerName = order.Customer,
+                        OrderCount = order.OrderCount,
+                        CompletedQuantity = order.CompletedQuantity,
+                        Carryover = actualCarryover,
+                        DelayDays = actualCarryover, // DelayDays is same as carryover based on the DTO description
+                        OrderWeek = orderWeek,
+                        OrderCreatedDate = order.AddedDateTime,
+                        Variants = order.Variants,
+                        IsActive = order.IsActive
+                    };
+
+                    result.Add(carryoverDetail);
+                }
+
+                // Sort by delay days descending, then by customer name
+                result = result.OrderByDescending(r => r.DelayDays)
+                              .ThenBy(r => r.CustomerName)
+                              .ThenBy(r => r.ProductCode)
+                              .ToList();
+
+                _logger.LogInformation("Retrieved {Count} carryover details", result.Count);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while retrieving carryover details with filters: date={Date}, productType={ProductType}, carryoverValue={CarryoverValue}", 
+                    date, productType, carryoverValue);
+                throw new InvalidOperationException($"Failed to get carryover details: {ex.Message}", ex);
+            }
+        }
     }
 }
