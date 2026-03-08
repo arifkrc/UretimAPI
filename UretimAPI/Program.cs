@@ -100,7 +100,6 @@ try
     // Enhanced Memory Caching for extreme load
     builder.Services.AddMemoryCache(options =>
     {
-        options.SizeLimit = 512 * 1024 * 1024; // 512MB cache limit
         options.CompactionPercentage = 0.25; // Remove 25% when limit reached
         options.ExpirationScanFrequency = TimeSpan.FromMinutes(5);
     });

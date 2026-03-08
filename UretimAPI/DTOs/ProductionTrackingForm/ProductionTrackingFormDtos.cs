@@ -16,10 +16,21 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         public string ProductCode { get; set; } = string.Empty;
         public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
-        public string Operation { get; set; } = string.Empty;
+        public int OperationId { get; set; }
+        public string OperationName { get; set; } = string.Empty;
+        public string OperationShortCode { get; set; } = string.Empty;
         public int? CastingDefect { get; set; }
         public int? ProcessingDefect { get; set; }
+        public int? MachineFailure { get; set; }
+        public int? SettingMachine { get; set; }
+        public int? DiamondChange { get; set; }
+        public int? RawWaiting { get; set; }
         public int? Cleaning { get; set; }
+        public decimal? CycleTime { get; set; }
+        public decimal? MachineEfficiency { get; set; }
+        public decimal? OperatorEfficiency { get; set; }
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
         public DateTime AddedDateTime { get; set; }
         public bool IsActive { get; set; }
     }
@@ -54,9 +65,8 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
         public int Quantity { get; set; }
 
-        [RequiredNotEmpty]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
-        public string Operation { get; set; } = string.Empty;
+        [Range(1, int.MaxValue, ErrorMessage = "OperationId must be a positive integer.")]
+        public int OperationId { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
         public int? CastingDefect { get; set; }
@@ -64,8 +74,24 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
         public int? ProcessingDefect { get; set; }
 
+        [Range(0, int.MaxValue, ErrorMessage = "Machine failure count cannot be negative.")]
+        public int? MachineFailure { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Setting machine count cannot be negative.")]
+        public int? SettingMachine { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Diamond change count cannot be negative.")]
+        public int? DiamondChange { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Raw waiting count cannot be negative.")]
+        public int? RawWaiting { get; set; }
+
         [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
         public int? Cleaning { get; set; }
+
+        public int? CycleTime { get; set; }
+        public double? MachineEfficiency { get; set; }
+        public double? OperatorEfficiency { get; set; }
     }
 
     public class UpdateProductionTrackingFormDto
@@ -98,9 +124,8 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(1, int.MaxValue, ErrorMessage = "Quantity must be a positive integer.")]
         public int Quantity { get; set; }
 
-        [RequiredNotEmpty]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Operation must be between 1 and 100 characters.")]
-        public string Operation { get; set; } = string.Empty;
+        [Range(1, int.MaxValue, ErrorMessage = "OperationId must be a positive integer.")]
+        public int OperationId { get; set; }
 
         [Range(0, int.MaxValue, ErrorMessage = "Casting defect count cannot be negative.")]
         public int? CastingDefect { get; set; }
@@ -108,8 +133,24 @@ namespace UretimAPI.DTOs.ProductionTrackingForm
         [Range(0, int.MaxValue, ErrorMessage = "Processing defect count cannot be negative.")]
         public int? ProcessingDefect { get; set; }
 
+        [Range(0, int.MaxValue, ErrorMessage = "Machine failure count cannot be negative.")]
+        public int? MachineFailure { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Setting machine count cannot be negative.")]
+        public int? SettingMachine { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Diamond change count cannot be negative.")]
+        public int? DiamondChange { get; set; }
+
+        [Range(0, int.MaxValue, ErrorMessage = "Raw waiting count cannot be negative.")]
+        public int? RawWaiting { get; set; }
+
         [Range(0, int.MaxValue, ErrorMessage = "Cleaning count cannot be negative.")]
         public int? Cleaning { get; set; }
+
+        public int? CycleTime { get; set; }
+        public double? MachineEfficiency { get; set; }
+        public double? OperatorEfficiency { get; set; }
     }
 
     public class BulkCreateProductionTrackingFormDto

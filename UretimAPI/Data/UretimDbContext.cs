@@ -80,13 +80,21 @@ namespace UretimAPI.Data
                 entity.Property(p => p.OperatorName).HasMaxLength(100);
                 entity.Property(p => p.SectionSupervisor).HasMaxLength(100);
                 entity.Property(p => p.ProductCode).IsRequired().HasMaxLength(50);
-                entity.Property(p => p.Operation).IsRequired().HasMaxLength(100);
+                entity.Property(p => p.CycleTime).HasColumnName("CycleTime");
+                entity.Property(p => p.MachineEfficiency).HasColumnName("MachineEfficiency");
+                entity.Property(p => p.OperatorEfficiency).HasColumnName("OperatorEfficiency");
                 
                 // Product relationship
                 entity.HasOne(p => p.Product)
                       .WithMany(pr => pr.ProductionTrackingForms)
                       .HasPrincipalKey(pr => pr.ProductCode)
                       .HasForeignKey(p => p.ProductCode)
+                      .OnDelete(DeleteBehavior.Restrict);
+                
+                // Operation relationship
+                entity.HasOne(p => p.Operation)
+                      .WithMany(o => o.ProductionTrackingForms)
+                      .HasForeignKey(p => p.OperationId)
                       .OnDelete(DeleteBehavior.Restrict);
             });
 
@@ -157,7 +165,7 @@ namespace UretimAPI.Data
                 .HasDatabaseName("IX_PTF_Shift_Date_IsActive");
 
             modelBuilder.Entity<ProductionTrackingForm>()
-                .HasIndex(p => new { p.Operation, p.Date, p.IsActive })
+                .HasIndex(p => new { p.OperationId, p.Date, p.IsActive })
                 .HasDatabaseName("IX_PTF_Operation_Date_IsActive");
 
             // Packing indexes for reporting

@@ -15,5 +15,6 @@ namespace UretimAPI.Entities
         // Navigation properties
         public ICollection<Product> ProductsWithLastOperation { get; set; } = new List<Product>();
         public ICollection<CycleTime> CycleTimes { get; set; } = new List<CycleTime>();
+        public ICollection<ProductionTrackingForm> ProductionTrackingForms { get; set; } = new List<ProductionTrackingForm>();
     }
 }

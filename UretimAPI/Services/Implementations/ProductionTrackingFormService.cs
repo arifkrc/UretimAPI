@@ -160,9 +160,9 @@ namespace UretimAPI.Services.Implementations
             return _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
         }
 
-        public async Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(string operation)
+        public async Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(int operationId)
         {
-            var ptfs = await _unitOfWork.ProductionTrackingForms.GetByOperationAsync(operation);
+            var ptfs = await _unitOfWork.ProductionTrackingForms.GetByOperationAsync(operationId);
             return _mapper.Map<IEnumerable<ProductionTrackingFormDto>>(ptfs);
         }
 
@@ -196,7 +196,7 @@ namespace UretimAPI.Services.Implementations
                 pageNumber, 
                 pageSize,
                 filter: p => 
-                    (string.IsNullOrEmpty(searchTerm) || p.ProductCode.Contains(searchTerm) || p.Operation.Contains(searchTerm) || p.Shift.Contains(searchTerm)) &&
+                    (string.IsNullOrEmpty(searchTerm) || p.ProductCode.Contains(searchTerm) || p.Shift.Contains(searchTerm)) &&
                     (!isActive.HasValue || p.IsActive == isActive.Value),
                 orderBy: q => q.OrderByDescending(p => p.Date)
             );

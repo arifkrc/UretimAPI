@@ -7,7 +7,7 @@ namespace UretimAPI.Services.Interfaces
         Task<IEnumerable<ProductionTrackingFormDto>> GetByProductCodeAsync(string productCode);
         Task<IEnumerable<ProductionTrackingFormDto>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
         Task<IEnumerable<ProductionTrackingFormDto>> GetByShiftAsync(string shift, DateTime date);
-        Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(string operation);
+        Task<IEnumerable<ProductionTrackingFormDto>> GetByOperationAsync(int operationId);
         Task<int> GetTotalQuantityByProductAsync(string productCode, DateTime? startDate = null, DateTime? endDate = null);
     }
 }

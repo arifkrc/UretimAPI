@@ -75,19 +75,23 @@ namespace UretimAPI.Mappings
 
             // ProductionTrackingForm Mappings
             CreateMap<ProductionTrackingForm, ProductionTrackingFormDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.OperationName, opt => opt.MapFrom(src => src.Operation.Name))
+                .ForMember(dest => dest.OperationShortCode, opt => opt.MapFrom(src => src.Operation.ShortCode));
 
             CreateMap<CreateProductionTrackingFormDto, ProductionTrackingForm>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.Operation, opt => opt.Ignore());
 
             CreateMap<UpdateProductionTrackingFormDto, ProductionTrackingForm>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.AddedDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.Product, opt => opt.Ignore());
+                .ForMember(dest => dest.Product, opt => opt.Ignore())
+                .ForMember(dest => dest.Operation, opt => opt.Ignore());
 
             // Packing Mappings
             CreateMap<Packing, PackingDto>()

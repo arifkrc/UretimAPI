@@ -14,7 +14,7 @@ namespace UretimAPI.Entities
         public string? SectionSupervisor { get; set; }
         public string ProductCode { get; set; } = string.Empty;
         public int Quantity { get; set; }
-        public string Operation { get; set; } = string.Empty;
+        public int OperationId { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         
@@ -27,8 +27,14 @@ namespace UretimAPI.Entities
         public int? RawWaiting { get; set; }
         public int? Cleaning { get; set; }
         
-        // Navigation property - Product null olamaz
+        // Performance/efficiency fields - nullable
+        public int? CycleTime { get; set; }
+        public double? MachineEfficiency { get; set; }
+        public double? OperatorEfficiency { get; set; }
+        
+        // Navigation properties
         public Product Product { get; set; } = null!;
+        public Operation Operation { get; set; } = null!;
         
         // Common fields
         public DateTime AddedDateTime { get; set; } = DateTimeHelper.Now;
